@@ -47,7 +47,7 @@ class Network:
         self.w_batch = []
         self.b_batch = []
         self.counter = 1
-        self.learning_rate = 0.01
+        self.learning_rate = 1
         # self.learning_rate
 
     def run(self, data):
@@ -60,11 +60,16 @@ class Network:
             # Back prop and reset batch
             if not self.counter%100:
                 self.back_prop()
+                print(self.counter)
+            if self.counter > 5000:
+                with open('trained.pickle', 'wb') as file:
+                    dump(self, file, protocol=HIGHEST_PROTOCOL)
+                break
             try:
                 data, actual = next(self.data_set)
                 self.run(data)
                 self.calc_change(actual)
-                print(self.counter)
+                # print(self.counter)
                 self.counter+=1
             except StopIteration:
                 try:
@@ -83,6 +88,7 @@ class Network:
                 data, answer = next(dataset)
                 self.run(data)
                 print(self.layers[-1].result, answer)
+                print(self.layers[-1].nodes)
                 correct += 1
             except:
                 break
@@ -108,7 +114,7 @@ class Network:
                 # Calcuating dC/dw
                 # Weights
                 for k in range(len(prev_layer.nodes)):
-                    weight_changes[i][j][k] = prev_layer.nodes[j] * dCdz
+                    weight_changes[i][j][k] = prev_layer.nodes[k] * dCdz
                     if i > 0:
                         # Calcuating dC/da
                         desired[i - 1][k] -= layer.weights[j][k] * dCdz 
@@ -121,6 +127,7 @@ class Network:
         self.b_batch.append(bias_changes)
 
     def back_prop(self):
+        print(self.layers[-1].weights[0][0])
         for i in range(1, len(self.layers)):
             layer = self.layers[i]
             for j in range(len(self.w_batch)):
@@ -158,6 +165,7 @@ class Output(Hidden_Layer):
         super().eval()
         self.result = self.labels[argmax(self.nodes)]
 
-# net = Network([10,10,10],[0,1,2,3,4,5,6,7,8,9],train_set)
+# net = Network([10],[0,1,2,3,4,5,6,7,8,9],train_set)
 # net.train()
 
+#cheeky little perceptron
