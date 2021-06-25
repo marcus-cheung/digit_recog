@@ -44,8 +44,8 @@ class Network:
             self.layers.append(Hidden_Layer(hidden_layers[i], self.layers[-1]))
         # Output Layer
         self.layers.append(Output(len(labels), self.layers[-1], labels))
-        self.w_batch = None
-        self.b_batch = None
+        self.w_batch = []
+        self.b_batch = []
         self.counter = 1
         # self.learning_rate
 
@@ -62,11 +62,14 @@ class Network:
             try:
                 data, actual = next(self.data_set)
                 self.run(data)
-                # self.calc_change(actual)
-                self.counter+=1
+                self.calc_change(actual)
                 print(self.counter)
+                self.counter+=1
             except StopIteration:
-                self.back_prop()
+                try:
+                    self.back_prop()
+                except:
+                    pass
                 with open('trained.pickle', 'wb') as file:
                     dump(self, file, protocol=HIGHEST_PROTOCOL)
                 break
@@ -82,20 +85,20 @@ class Network:
                     correct+=1
             except:
                 break
-        return correct, len(self.data_set)
+        return correct, len(dataset)
 
     def calc_change(self, actual):
         n = len(self.layers)
-        weight_changes = [None] * (n - 1)
-        bias_changes = [None] * (n - 1)
+        weight_changes = [None] * n
+        bias_changes = [None] * n
         desired = [None] * n
         desired[-1] = [1 if i==actual else 0 for i in range(10)]
         # Layers
         for i in range(n - 1, 0, -1):
             layer = self.layers[i]
             prev_layer = self.layers[i - 1]
-            bias_changes  = empty(layer.biases.shape)
-            weight_changes = empty(layer.weights.shape)
+            bias_changes[i]  = empty(layer.biases.shape)
+            weight_changes[i] = empty(layer.weights.shape)
             desired[i - 1] = copy(prev_layer.nodes)
             # Nodes
             for j in range(len(layer.nodes)):
@@ -107,21 +110,25 @@ class Network:
                     weight_changes[i][j][k] = prev_layer.nodes[j] * dCdz
                     if i > 0:
                         # Calcuating dC/da
-                        desired[i - 1][k] -= layer.weights[i][j][k] * dCdz 
+                        desired[i - 1][k] -= layer.weights[j][k] * dCdz 
                 # desired[i - 1] = add(desired[i - 1], -dCdz * layer.weights[i][j])
                 # Caluating dC/db
-                bias_changes[i][j] = dCdz  
-
+                bias_changes[i][j] = dCdz
+        if weight_changes is None:
+            print('I am the error: ' + str(actual))
         self.w_batch.append(weight_changes)
         self.b_batch.append(bias_changes)
 
     def back_prop(self):
-        # w_gen = iter(self.w_batch)
-        for layer in self.layers:
-            pass
-        # self.layers.apply(avg(self.weights_batch))
-        self.w_batch = None
-        self.b_batch = None
+        training_constant = 0.01
+        
+        for i in range(1, len(self.layers)):
+            layer = self.layers[i]
+            for j in range(len(self.w_batch)):
+                layer.weights = add(layer.weights, training_constant * array(self.w_batch[j][i]))
+                layer.biases = add(layer.biases, training_constant * array(self.b_batch[j][i]))
+        self.w_batch = []
+        self.b_batch = []
                 
         
 
@@ -139,7 +146,9 @@ class Hidden_Layer(Base_Layer):
         self.weights = array([[uniform(0,1) for weight in range(_prev_layer.num_nodes)] for node in range(_num_nodes)])
         self.biases = array([uniform(0,1) for node in range(_num_nodes)])
     def eval(self):
-        self.nodes = array(list(map(sigmoid,list(add(matmul(self.weights, self.prev_layer.nodes),self.biases)))))
+        x = self.weights@self.prev_layer.nodes
+        # print(self.prev_layer.nodes)
+        self.nodes = array(list(map(sigmoid,list(add(self.weights@self.prev_layer.nodes,self.biases)))))
 
 class Output(Hidden_Layer):
     def __init__(self, _num_nodes, _prev_layer, labels):
@@ -150,5 +159,6 @@ class Output(Hidden_Layer):
         super().eval()
         self.result = self.labels[argmax(self.nodes)]
 
-# net = Network([16,20],[0,1,2,3,4,5,6,7,8,9],train_set)
-# net.train()
+net = Network([10,10,10],[0,1,2,3,4,5,6,7,8,9],train_set)
+net.train()
+
