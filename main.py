@@ -17,5 +17,4 @@ def main():
         correct, total = trained_network.test(test_set)
         print(f'{correct} correct out of {total} cases')
 
-if __name__ == "__main__":
-    main()
+main()

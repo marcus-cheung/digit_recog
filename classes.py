@@ -47,6 +47,7 @@ class Network:
         self.w_batch = []
         self.b_batch = []
         self.counter = 1
+        self.learning_rate = 0.01
         # self.learning_rate
 
     def run(self, data):
@@ -81,8 +82,8 @@ class Network:
             try:
                 data, answer = next(dataset)
                 self.run(data)
-                if self.layers[-1].result == answer:
-                    correct+=1
+                print(self.layers[-1].result, answer)
+                correct += 1
             except:
                 break
         return correct, len(dataset)
@@ -120,13 +121,11 @@ class Network:
         self.b_batch.append(bias_changes)
 
     def back_prop(self):
-        training_constant = 0.01
-        
         for i in range(1, len(self.layers)):
             layer = self.layers[i]
             for j in range(len(self.w_batch)):
-                layer.weights = add(layer.weights, training_constant * array(self.w_batch[j][i]))
-                layer.biases = add(layer.biases, training_constant * array(self.b_batch[j][i]))
+                layer.weights = add(layer.weights, -self.learning_rate * array(self.w_batch[j][i]))
+                layer.biases = add(layer.biases, -self.learning_rate * array(self.b_batch[j][i]))
         self.w_batch = []
         self.b_batch = []
                 
@@ -159,6 +158,6 @@ class Output(Hidden_Layer):
         super().eval()
         self.result = self.labels[argmax(self.nodes)]
 
-net = Network([10,10,10],[0,1,2,3,4,5,6,7,8,9],train_set)
-net.train()
+# net = Network([10,10,10],[0,1,2,3,4,5,6,7,8,9],train_set)
+# net.train()
 
