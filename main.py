@@ -6,7 +6,7 @@ from numpy import argmax
 test_set = scipy.io.loadmat('matlab/emnist-mnist.mat')['dataset']['test']
 
 def main():
-    with open("trained.pickle", "rb") as file:
+    with open("hundred.pickle", "rb") as file:
         trained_network = load(file)
         # for i in range(100):
         #     # data, answer = next(test_set)

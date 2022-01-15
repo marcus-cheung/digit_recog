@@ -34,7 +34,6 @@ class DataSet(list):
     def __next__(self):
         self.idx += 1
         try:
-            # return scipy.stats.zscore(self.data['images'][0, 0][self.idx - 1]), self.data['labels'][0, 0][self.idx - 1]
             return self.data['images'][0, 0][self.idx - 1] / 255, self.data['labels'][0, 0][self.idx - 1]
         except IndexError:
             self.idx = 0
@@ -45,12 +44,10 @@ class DataSet(list):
 
 # Neural Network
 class Network:
-    def __init__(self, hidden_layers, labels, raw):
+    def __init__(self, name, hidden_layers, labels, raw):
+        self.name = name
         self.layers = []
-        # Convert raw data
         self.data_set = DataSet(raw)
-        # print(self.data_set.data)
-        # Input layer
         self.layers.append(Base_Layer(self.data_set.input_len))
         # Hidden layers
         for i in range(len(hidden_layers)):
@@ -74,20 +71,17 @@ class Network:
         self.layers[0].nodes = array([data]).transpose()
         for layer in self.layers:
             layer.eval()
-        # print(self.layers[-1].nodes)
+        return self.layers[-1].result, self.layers[-1].confidence
 
     def train(self, epochs):
         dataset_size = 60000
         for i in range(epochs):
             self.counter = 0
             self.data_set.idx = 0
-            print('Welcome to a new epoch!')
             self.data_set.shuffle()
             while True:
                 data, actual = next(self.data_set)
                 self.run(data)
-                # if self.counter == 1:
-                #     for layer in self.layers: print(layer.nodes)
                 self.calc_change(actual)
                 self.counter += 1
                 # Back prop and reset batch
@@ -97,15 +91,12 @@ class Network:
                     print(actual, self.layers[-1].result, self.layers[-1].nodes)
                 if self.counter >= dataset_size:
                     break
-        with open('zerolayers.pickle', 'wb') as file:
+        with open(f'{self.name}.pickle', 'wb') as file:
             dump(self, file, protocol=HIGHEST_PROTOCOL)
-
 
     def test(self, raw):
         dataset = DataSet(raw)
         correct = 0
-        # print(dataset.data)
-        # print(next(dataset))
         while True:
             try:
                 data, answer = next(dataset)
@@ -126,9 +117,6 @@ class Network:
         dCdz = np.multiply(dsigmoid(self.zs[-1]), self.layers[-1].nodes - desired)
         bias_changes[-1] = dCdz
         weight_changes[-1] = dCdz @ self.layers[-2].nodes.transpose()
-        # print(dCdz)
-        # print(self.layers[-2].nodes.transpose())
-        # print(weight_changes[-1])
         for i in range(n - 2, 0, -1):
             z = self.zs[i]
             dCdz = np.multiply(dsigmoid(z), self.weights[i + 1].transpose() @ dCdz)
@@ -181,14 +169,19 @@ class Output(Hidden_Layer):
         super().__init__(_num_nodes, _prev_layer)
         self.labels = labels
         self.result = None
+        self.confidence = None
 
     def eval(self):
         super().eval()
+        self.confidence = max(self.nodes)
         self.result = self.labels[argmax(self.nodes)]
+        # print(self.nodes)
 
 
-# net = Network([5],[0,1,2,3,4,5,6,7,8,9],train_set)
-# net.train(3)
-with open("zerolayers.pickle", "rb") as file:
+net = Network("hundredfifty", [100, 50], [0,1,2,3,4,5,6,7,8,9], train_set)
+net.train(3)
+with open("hundredfifty.pickle", "rb") as file:
     net = load(file)
-    net.train(20)
+    for i in range(0, 10):
+        net.train(3)
+
