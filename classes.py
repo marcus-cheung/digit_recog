@@ -42,6 +42,21 @@ class DataSet(list):
     def shuffle(self):
         shuffle(self.data)
 
+def preprocess(data):
+    #TODO: look into scipy center of mass
+    #find the most outlier of each side and use that to center
+    #row-wise (top bottom)
+    top = None
+    bottom = None
+    for i in range(0, len(data)//2):
+        if top is not None and sum(data[i]) > 0:
+            top = i
+        if bottom is not None and sum(data[-i-1]):
+            bottom = -i-1
+    #column-wise:
+
+
+
 # Neural Network
 class Network:
     def __init__(self, name, hidden_layers, labels, raw):
@@ -127,7 +142,6 @@ class Network:
         for i in range(10):
             self.batch_cost += (self.layers[-1].nodes[i] - desired[i]) ** 2
 
-
     def back_prop(self):
         for i in range(1, len(self.layers)):
             layer = self.layers[i]
@@ -141,7 +155,6 @@ class Network:
 
     def randomize_batch(self):
         self.batch = sample(range(0, 59999))
-
 
 class Base_Layer:
     def __init__(self, _num_nodes):
@@ -173,15 +186,14 @@ class Output(Hidden_Layer):
 
     def eval(self):
         super().eval()
-        self.confidence = max(self.nodes)
+        self.confidence = max(self.nodes)[0]
         self.result = self.labels[argmax(self.nodes)]
         # print(self.nodes)
 
 
-net = Network("hundredfifty", [100, 50], [0,1,2,3,4,5,6,7,8,9], train_set)
-net.train(3)
-with open("hundredfifty.pickle", "rb") as file:
-    net = load(file)
-    for i in range(0, 10):
-        net.train(3)
-
+# net = Network("hundredfifty", [100, 50], [0,1,2,3,4,5,6,7,8,9], train_set)
+# net.train(3)
+# with open("hundred.pickle", "rb") as file:
+#     net = load(file)
+#     for i in range(0, 1000):
+#         net.train(3)

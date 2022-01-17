@@ -70,9 +70,14 @@ def on_mouse_drag(x, y, dx, dy, button, modifiers):
 def on_mouse_press(x, y, button, modifiers):
     mouse_update(x,y)
 
-def mouse_update(x,y):
-    closest_point = get_closest_point(x, y)
-    canvas.grid[closest_point[0]][closest_point[1]] = pen_eraser
+brush_radius = 1.5
+def mouse_update(x, y):
+    x = x / SCALE
+    y = y / SCALE
+    for i in range(max(0, int(x - brush_radius)), min(HEIGHT, int(x + brush_radius) + 1)):
+        for j in range(max(0, int(y - brush_radius)), min(WIDTH, int(y + brush_radius) + 1)):
+            if (x - i - 0.5) ** 2 + (y - j - 0.5) ** 2 < brush_radius ** 2:
+                canvas.grid[i][j] = pen_eraser
 
 @game_window.event
 def on_key_release(symbol, modifiers): 
