@@ -112,6 +112,8 @@ class Network:
     def test(self, raw):
         dataset = DataSet(raw)
         correct = 0
+        # print(dataset.data)
+        # print(next(dataset))
         while True:
             try:
                 data, answer = next(dataset)

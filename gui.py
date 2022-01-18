@@ -4,10 +4,11 @@ from pyglet.window import key
 from pickle import load
 import numpy as np
 from classes import *
+import math
 
 TIME_INCREMENT = 1 / 30
 
-SCALE = 30
+SCALE = 15
 WIDTH = 28
 HEIGHT = 28
 WHITE = 255, 255, 255
@@ -42,9 +43,11 @@ def on_draw():
     blocks = []
     for i in range(HEIGHT):
         for j in range(WIDTH):
-            if canvas.grid[i][j] == 1:
+            if canvas.grid[i][j]:
+                v = int(255 * canvas.grid[i][j])
+                color = v, v, v
                 block = shapes.Rectangle(SCALE * (i + 0.05), SCALE * (j + 0.05), SCALE * 0.90, SCALE * 0.90,
-                                         color=WHITE, batch=batch)
+                                         color=color, batch=batch)
                 blocks.append(block)
     batch.draw()
     if canvas.result is not None:
@@ -70,14 +73,15 @@ def on_mouse_drag(x, y, dx, dy, button, modifiers):
 def on_mouse_press(x, y, button, modifiers):
     mouse_update(x,y)
 
-brush_radius = 1.5
+brush_radius = 2
 def mouse_update(x, y):
     x = x / SCALE
     y = y / SCALE
-    for i in range(max(0, int(x - brush_radius)), min(HEIGHT, int(x + brush_radius) + 1)):
-        for j in range(max(0, int(y - brush_radius)), min(WIDTH, int(y + brush_radius) + 1)):
-            if (x - i - 0.5) ** 2 + (y - j - 0.5) ** 2 < brush_radius ** 2:
-                canvas.grid[i][j] = pen_eraser
+    for i in range(max(0, round(x - brush_radius)), min(HEIGHT-1, round(x + brush_radius))):
+        for j in range(max(0, round(y - brush_radius)), min(WIDTH-1, round(y + brush_radius))):
+            d = math.sqrt((x - i - 0.5) ** 2 + (y - j - 0.5) ** 2 )
+            if d ** 2 < brush_radius ** 2:
+                canvas.grid[i][j] = min(pen_eraser, canvas.grid[i][j] + pen_eraser / d**3) # * math.exp(-d ** 2 * 0.1)
 
 @game_window.event
 def on_key_release(symbol, modifiers): 
@@ -86,7 +90,7 @@ def on_key_release(symbol, modifiers):
         canvas.clear()
         canvas.result = None
     if symbol == key.ENTER or symbol == key.RETURN:
-        canvas.result, canvas.confidence = network.run(list(np.ravel(np.array(canvas.grid), order = "C")))
+        canvas.result, canvas.confidence = network.run(list(reversed(list(np.ravel(np.array(canvas.grid), order = "C")))))
     if symbol == key.SPACE:
         pen_eraser = 1 - pen_eraser
         
